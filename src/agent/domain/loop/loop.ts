@@ -56,7 +56,7 @@ export class Loop {
 			throw new Error("Instruction result is required")
 		}
 
-		this.completedInstructions.push(this.pendingInstruction)
+		this.completedInstructions.push(instruction)
 		this.pendingInstruction = undefined
 	}
 
