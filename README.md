@@ -136,20 +136,38 @@ This separation is also useful when different instructions have different execut
 
 Imagine an agent working on a coding task. It decides to execute a shell command that modifies files.
 
-Without an explicit execution boundary, a framework may immediately dispatch the command. With Mozaik Agent, the tool call becomes a pending operation:
+Without an explicit execution boundary, a framework may immediately dispatch the command. The loop lives inside one call, and the decision to run a tool is made for you:
 
-```text
-Goal: Update the project dependencies
-
-Breakpoint: Tool Call
-Tool: shell
-Arguments: { "command": "npm install" }
-
-Application decision: Review required
-Status: Paused
+```ts
+// A closed agent loop (pseudo-code): the framework decides, runs the tool, and loops.
+const result = await agent.run("Update the project dependencies")
+// By the time you get control back, `npm install` has already run.
 ```
 
-A developer reviews the operation and approves it. The application executes the tool, supplies the output, and the Loop continues with the updated context.
+With Mozaik Agent, the tool call becomes a pending operation that your application decides about:
+
+```ts
+// The model asked for a shell command. Put it at a breakpoint instead of running it.
+await setBreakpoint({
+	loopId: loop.id,
+	instruction: {
+		type: "tool_call",
+		parameters: { toolName: "shell", toolArguments: JSON.stringify({ command: "npm install" }) },
+	},
+})
+
+// Paused here. Inspect the pending instruction and decide.
+const { pendingInstruction } = await getLoop(loop.id)
+console.log(pendingInstruction) // { type: "tool_call", parameters: { toolName: "shell", ... } }
+
+if (await askDeveloper(pendingInstruction)) {
+	await advanceLoop({ loopId: loop.id }) // runs the registered `shell` tool and records its output
+} else {
+	await endLoop({ loopId: loop.id, message: "Declined by the developer." })
+}
+```
+
+A developer reviews the operation and approves it. The application executes the tool, supplies the output, and the Loop continues with the updated context. A complete, runnable version is in the examples folder, [examples/approve-tool-call.ts](examples/approve-tool-call.ts).
 
 The breakpoint is not just a debugging feature. It is a **programmable decision point** in the agent's execution.
 
