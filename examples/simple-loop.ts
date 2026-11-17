@@ -1,6 +1,6 @@
 import "dotenv/config"
 import { initAgentModule, resolveAgentModule } from "../src"
-import { MODEL } from "./run-loop"
+import { MODEL, MAX_OUTPUT_TOKENS } from "./run-loop"
 
 // The smallest Loop: one inference, paused at a breakpoint before it runs.
 // Needs ANTHROPIC_API_KEY (or set MODEL to a model of another provider and its key).
@@ -18,6 +18,7 @@ async function main() {
 			type: "inference",
 			parameters: {
 				model: MODEL,
+				maxOutputTokens: MAX_OUTPUT_TOKENS,
 				context: { items: [{ type: "user_message", text: loop.goal }] },
 			},
 		},

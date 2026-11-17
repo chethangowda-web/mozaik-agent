@@ -2,6 +2,8 @@ import { resolveAgentModule } from "../src"
 import type { ContextItem, ToolCallItem, ToolDefinition } from "../src"
 
 export const MODEL = process.env.MODEL ?? "claude-sonnet-5-5"
+// Anthropic requires an output limit on every request, so the examples set one.
+export const MAX_OUTPUT_TOKENS = 1024
 
 /**
  * Decides whether a requested tool call may run. Return false to decline it.
@@ -33,7 +35,12 @@ export async function runLoop(params: {
 			loopId: params.loopId,
 			instruction: {
 				type: "inference",
-				parameters: { model: MODEL, tools: params.tools, context: { items: [...context] } },
+				parameters: {
+					model: MODEL,
+					maxOutputTokens: MAX_OUTPUT_TOKENS,
+					tools: params.tools,
+					context: { items: [...context] },
+				},
 			},
 		})
 		await advanceLoop({ loopId: params.loopId })
